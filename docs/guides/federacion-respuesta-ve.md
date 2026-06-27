@@ -30,9 +30,8 @@ de `entity` con `audienceScope: "outside_venezuela"` cuando se suben por
 `channels.type: "donation_url"`, las instrucciones de entrega usan
 `channels.type: "supply_dropoff"` y los articulos aceptados se traducen a
 `needs` (`medical_supplies`, `food`, `water`, `shelter`, `funds` u `other`).
-Mientras Respuesta VE no tenga `countryCode` como campo canonico de
-`/api/v1/entities`, el pais queda en el payload restringido y el candidato usa
-`estado`/`municipio` para pais/ciudad o region.
+Los candidatos usan campos canonicos (`countryCode`, `admin1`, `admin2`) y los
+labels localizados quedan solo en el payload restringido si llegan de la fuente.
 
 Las fotos pequeñas subidas desde `/federacion` se envían como `dataUrl` para
 revisión restringida. En los espejos automáticos de reportes/personas se indica
@@ -61,7 +60,7 @@ restringida.
 | --- | --- |
 | `FEDERATION_PUBLIC_INTAKE_URL` | Override del endpoint. Default: Respuesta VE producción. |
 | `FEDERATION_API_BASE_URL` | API base para feeds canonicos. Default: `https://respuestave.org/api/v1`. |
-| `RESPUESTA_VE_API_KEY` / `FEDERATION_API_KEY` | Llave de partner solo del servidor para consultar feeds procesados. Nunca usar `NEXT_PUBLIC_`. |
+| `RESPUESTA_VE_API_KEY` / `FEDERATION_API_KEY` | Llave de partner solo del servidor para enviar intake, consultar recibos y leer feeds procesados. Nunca usar `NEXT_PUBLIC_`. |
 | `FEDERATION_PUBLIC_INTAKE_DISABLED=1` | Desactiva el espejo sin tocar código. |
 | `FEDERATION_PUBLIC_INTAKE_TIMEOUT_MS` | Timeout del espejo, 500-10000 ms. Default: 2500. |
 
@@ -92,7 +91,8 @@ curl "/api/federation/public-intake?id=<receipt-id>"
 ```
 
 Ese estado solo muestra recibo, `review_status` y punteros públicos al registro
-procesado cuando exista; no devuelve payload crudo ni contactos.
+procesado cuando exista; no devuelve payload crudo ni contactos. El id del recibo
+es opaco y no debe asumirse como UUID.
 
 Para datos ya normalizados, el modelo es polling por cursor en Respuesta VE:
 
@@ -103,11 +103,13 @@ El consumidor guarda el `nextSince` que devuelve cada feed y lo usa en la próxi
 consulta. Esa es la forma de saber que hay datos nuevos ya procesados.
 
 Este sitio tambien expone un proxy server-side para no filtrar la llave al
-navegador:
+navegador. Requiere token admin o `Authorization: Bearer $CRON_SECRET`:
 
 ```bash
-curl "/api/federation/changes?feed=entities&since=2026-06-27T00:00:00Z"
-curl "/api/federation/changes?feed=persons&since=2026-06-27T00:00:00Z"
+curl -H "x-admin-token: $ADMIN_PASSWORD" \
+  "/api/federation/changes?feed=entities&since=2026-06-27T00:00:00Z"
+curl -H "x-admin-token: $ADMIN_PASSWORD" \
+  "/api/federation/changes?feed=persons&since=2026-06-27T00:00:00Z"
 ```
 
 ## Agrupación local

@@ -59,6 +59,9 @@ export default function FederationUploadForm() {
     () => AUDIENCE_OPTIONS.find((option) => option.value === audience) ?? AUDIENCE_OPTIONS[0],
     [audience],
   );
+  const localReceiptUrl = receipt?.id
+    ? `/api/federation/public-intake?id=${encodeURIComponent(receipt.id)}`
+    : null;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -266,9 +269,9 @@ export default function FederationUploadForm() {
               >
                 {checking ? "Consultando…" : "Consultar estado"}
               </button>
-              {receipt.statusUrl && (
+              {localReceiptUrl && (
                 <a
-                  href={receipt.statusUrl}
+                  href={localReceiptUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800"

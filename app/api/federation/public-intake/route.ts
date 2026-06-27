@@ -138,10 +138,10 @@ function jsonCanonicalCandidates(body: Record<string, unknown>, kind: IntakeKind
       externalId: typeof body.externalId === "string" ? body.externalId : undefined,
       externalUrl: typeof body.sourceUrl === "string" ? body.sourceUrl : undefined,
       record: {
-        name: body.name,
+        displayName: body.name,
         age: typeof body.age === "number" ? body.age : null,
-        estado: typeof body.estado === "string" ? body.estado : typeof body.state === "string" ? body.state : null,
-        municipio: typeof body.municipio === "string" ? body.municipio : typeof body.city === "string" ? body.city : null,
+        admin1: typeof body.admin1 === "string" ? body.admin1 : typeof body.state === "string" ? body.state : null,
+        admin2: typeof body.admin2 === "string" ? body.admin2 : typeof body.city === "string" ? body.city : null,
         status: typeof body.status === "string" ? body.status : "unknown",
         sourceUpdatedAt: typeof body.sourceUpdatedAt === "string" ? body.sourceUpdatedAt : undefined,
       },
@@ -156,13 +156,21 @@ function jsonCanonicalCandidates(body: Record<string, unknown>, kind: IntakeKind
       entity: {
         kind: typeof body.entityKind === "string" ? body.entityKind : "other",
         name: body.name,
-        estado: typeof body.estado === "string" ? body.estado : typeof body.state === "string" ? body.state : null,
-        municipio: typeof body.municipio === "string" ? body.municipio : typeof body.city === "string" ? body.city : null,
+        audienceScope: typeof body.audienceScope === "string" ? body.audienceScope : undefined,
+        countryCode: typeof body.countryCode === "string" ? body.countryCode : undefined,
+        admin1: typeof body.admin1 === "string" ? body.admin1 : typeof body.state === "string" ? body.state : null,
+        admin2: typeof body.admin2 === "string" ? body.admin2 : typeof body.city === "string" ? body.city : null,
         sourceUpdatedAt: typeof body.sourceUpdatedAt === "string" ? body.sourceUpdatedAt : undefined,
       },
     }];
   }
   return [];
+}
+
+function receiptId(value: string | null): string | null {
+  const id = value?.trim();
+  if (!id || id.length > 200 || /[\u0000-\u001f\u007f]/.test(id)) return null;
+  return id;
 }
 
 async function multipartEnvelope(request: Request): Promise<FederationEnvelope> {
@@ -259,8 +267,8 @@ async function jsonEnvelope(request: Request): Promise<FederationEnvelope> {
 }
 
 export async function GET(request: Request) {
-  const id = new URL(request.url).searchParams.get("id");
-  if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+  const id = receiptId(new URL(request.url).searchParams.get("id"));
+  if (!id) {
     return NextResponse.json({ error: "Indica un recibo válido." }, { status: 400 });
   }
 

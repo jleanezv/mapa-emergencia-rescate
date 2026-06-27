@@ -67,14 +67,15 @@ Los `POST` públicos de reportes, personas desaparecidas, hospitales y pacientes
 también envían una copia compacta a la cola restringida de Respuesta VE para
 revisión operativa.
 
-Variables opcionales:
+Variables:
 
 - `FEDERATION_PUBLIC_INTAKE_URL`: endpoint de intake. Por defecto usa
   `https://respuestave.org/api/v1/public-intake`.
 - `FEDERATION_API_BASE_URL`: API base para feeds canonicos. Por defecto usa
   `https://respuestave.org/api/v1`.
 - `RESPUESTA_VE_API_KEY` o `FEDERATION_API_KEY`: llave de partner solo del
-  servidor para consultar feeds procesados. No uses `NEXT_PUBLIC_`.
+  servidor para enviar intake, consultar recibos y leer feeds procesados. No
+  uses `NEXT_PUBLIC_`.
 - `FEDERATION_PUBLIC_INTAKE_DISABLED=1`: desactiva el espejo si necesitas operar
   el sitio aislado.
 - `FEDERATION_PUBLIC_INTAKE_TIMEOUT_MS`: timeout del espejo, entre 500 y 10000 ms.
@@ -110,14 +111,14 @@ relaciones (`paciente -> hospital`, `hospital -> zona`, `reporte -> necesidad`).
 Endpoints:
 
 - `POST /api/federation/public-intake`: envía JSON o `multipart/form-data` a
-  revisión central.
+  revisión central usando la llave server-side configurada.
 - `GET /api/federation/public-intake?id=<receipt-id>`: consulta el estado seguro
-  del recibo sin exponer el payload crudo.
+  del recibo sin exponer el payload crudo. El id del recibo es opaco.
 - `GET /api/federation/coordination`: devuelve la vista agrupada y normalizada
   que alimenta `/coordinacion`.
 - `GET /api/federation/changes?feed=entities&since=<cursor>`: proxy server-side
-  para feeds procesados de Respuesta VE (`feed=persons` o `feed=entities`) cuando
-  `RESPUESTA_VE_API_KEY` esta configurada.
+  para feeds procesados de Respuesta VE (`feed=persons` o `feed=entities`).
+  Requiere token admin o `Authorization: Bearer $CRON_SECRET`.
 
 Cuando Respuesta VE promueve datos a registros normalizados, los consumidores
 deben hacer polling con cursores (`since`) en sus feeds canónicos de cambios,

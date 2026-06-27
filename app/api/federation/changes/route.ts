@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isCronRequest } from "@/lib/admin";
 import {
   federationApiBaseUrl,
   federationPartnerAuthConfigured,
@@ -31,6 +32,13 @@ function parseSince(value: string | null): string | null {
 }
 
 export async function GET(request: Request) {
+  if (!isCronRequest(request)) {
+    return NextResponse.json(
+      { error: "No autorizado." },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   const params = new URL(request.url).searchParams;
   const feed = parseFeed(params.get("feed"));
   if (!feed) {

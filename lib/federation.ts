@@ -82,6 +82,11 @@ export function federationPartnerAuthConfigured(): boolean {
   return Boolean(federationPartnerApiKey());
 }
 
+function partnerAuthHeaders(): Record<string, string> | null {
+  const key = federationPartnerApiKey();
+  return key ? { authorization: `Bearer ${key}` } : null;
+}
+
 function federationDisabled(): boolean {
   return /^(1|true|yes)$/i.test(process.env.FEDERATION_PUBLIC_INTAKE_DISABLED ?? "");
 }
@@ -202,6 +207,8 @@ async function readReceipt(response: Response): Promise<Record<string, unknown> 
 
 export async function submitFederationIntake(envelope: FederationEnvelope): Promise<FederationResult> {
   if (federationDisabled()) return { ok: false, enabled: false, error: "disabled" };
+  const auth = partnerAuthHeaders();
+  if (!auth) return { ok: false, enabled: false, error: "missing_partner_api_key" };
 
   const prepared = prepareEnvelope(envelope);
   const body = JSON.stringify(prepared);
@@ -214,7 +221,7 @@ export async function submitFederationIntake(envelope: FederationEnvelope): Prom
   try {
     const response = await fetch(intakeUrl(), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...auth },
       body,
       signal: controller.signal,
     });
@@ -248,6 +255,8 @@ export async function submitFederationIntake(envelope: FederationEnvelope): Prom
 
 export async function getFederationReceipt(id: string): Promise<FederationResult & Record<string, unknown>> {
   if (federationDisabled()) return { ok: false, enabled: false, error: "disabled" };
+  const auth = partnerAuthHeaders();
+  if (!auth) return { ok: false, enabled: false, error: "missing_partner_api_key" };
   const url = new URL(intakeUrl());
   url.searchParams.set("id", id);
 
@@ -256,7 +265,7 @@ export async function getFederationReceipt(id: string): Promise<FederationResult
   try {
     const response = await fetch(url, {
       method: "GET",
-      headers: { accept: "application/json" },
+      headers: { accept: "application/json", ...auth },
       signal: controller.signal,
       cache: "no-store",
     });
@@ -294,8 +303,8 @@ export async function getFederationChanges(
   since: string,
   limit: number,
 ): Promise<FederationChangesResult> {
-  const key = federationPartnerApiKey();
-  if (!key) return { ok: false, enabled: false, feed, error: "missing_partner_api_key" };
+  const auth = partnerAuthHeaders();
+  if (!auth) return { ok: false, enabled: false, feed, error: "missing_partner_api_key" };
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), federationTimeoutMs());
@@ -308,7 +317,7 @@ export async function getFederationChanges(
       method: "GET",
       headers: {
         accept: "application/json",
-        authorization: `Bearer ${key}`,
+        ...auth,
       },
       signal: controller.signal,
       cache: "no-store",
@@ -412,14 +421,14 @@ export function missingPersonEnvelope(person: MissingPerson, request: Request): 
     externalUrl: sourceUrl,
     recommendedPath: "/api/v1/persons",
     record: {
-      name: person.name,
+      displayName: person.name,
       age: person.age,
-      estado: areaLabel(person.lastSeen),
+      admin1: areaLabel(person.lastSeen),
       status: person.status === "found" ? "found_safe" : "missing",
-      lastSeenAt: person.lastSeen,
       sourceUpdatedAt: iso(person.resolvedAt ?? person.createdAt),
     },
     privateReviewFields: {
+      lastSeenText: person.lastSeen,
       contactPrivate: Boolean(person.contact),
       hasPhoto: Boolean(person.photoUrl),
     },
@@ -478,9 +487,11 @@ export function hospitalEnvelope(hospital: Hospital, request: Request): Federati
     entity: {
       kind: hospitalEntityKind(hospital.facilityType),
       name: hospital.name,
-      estado: hospital.state,
-      municipio: hospital.municipality,
-      address: hospital.address,
+      audienceScope: "in_venezuela",
+      countryCode: "VE",
+      admin1: hospital.state,
+      admin2: hospital.municipality,
+      addressPrivate: hospital.address,
       sourceUpdatedAt: iso(hospital.createdAt),
       channels: [{
         type: "website",
