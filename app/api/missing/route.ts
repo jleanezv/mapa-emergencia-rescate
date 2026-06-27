@@ -14,6 +14,7 @@ import { checkRateLimit, clientIp } from "@/lib/ratelimit";
 import { cached } from "@/lib/cache";
 import { jsonWithEtag } from "@/lib/http";
 import { readJson, bodyErrorResponse, BODY_LIMIT_PHOTO } from "@/lib/body";
+import { missingPersonEnvelope, submitFederationIntake } from "@/lib/federation";
 
 export const dynamic = "force-dynamic";
 
@@ -118,10 +119,10 @@ export async function POST(request: Request) {
     }
   }
 
+  let person: Awaited<ReturnType<typeof addMissing>>;
   try {
-    const reportType =
-      body.reportType === "found" ? "found" : "missing";
-    const person = await addMissing({
+    const reportType = body.reportType === "found" ? "found" : "missing";
+    person = await addMissing({
       name,
       age: body.age,
       description: body.description,
@@ -130,7 +131,6 @@ export async function POST(request: Request) {
       photo: body.photo,
       reportType,
     });
-    return NextResponse.json({ person }, { status: 201 });
   } catch {
     return NextResponse.json(
       {
@@ -140,4 +140,7 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+
+  const federation = await submitFederationIntake(missingPersonEnvelope(person, request));
+  return NextResponse.json({ person, federation }, { status: 201 });
 }

@@ -92,4 +92,5 @@ _(pendiente)_
 
 - [Desplegar la sincronización con Vercel Cron](guides/sincronizacion-cron-vercel.md)
 - [Rendimiento, capacidad y pruebas de carga](guides/rendimiento-y-pruebas-de-carga.md)
+- [Federación con Respuesta VE](guides/federacion-respuesta-ve.md)
 </content>

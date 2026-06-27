@@ -9,6 +9,7 @@ import { checkRateLimit, clientIp } from "@/lib/ratelimit";
 import { cached } from "@/lib/cache";
 import { jsonWithEtag } from "@/lib/http";
 import { readJson, bodyErrorResponse, BODY_LIMIT_PHOTO } from "@/lib/body";
+import { reportEnvelope, submitFederationIntake } from "@/lib/federation";
 import { REPORT_TYPE_KEYS, type NewReport, type ReportType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -85,8 +86,9 @@ export async function POST(request: Request) {
     }
   }
 
+  let report: Awaited<ReturnType<typeof addReport>>;
   try {
-    const report = await addReport({
+    report = await addReport({
       type,
       lat,
       lng,
@@ -95,7 +97,6 @@ export async function POST(request: Request) {
       needs: typeof body.needs === "string" ? body.needs : "",
       photo,
     });
-    return NextResponse.json({ report }, { status: 201 });
   } catch {
     // Falla visible: nunca confirmamos un reporte que no se guardó en la base.
     return NextResponse.json(
@@ -106,4 +107,7 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+
+  const federation = await submitFederationIntake(reportEnvelope(report, request));
+  return NextResponse.json({ report, federation }, { status: 201 });
 }

@@ -61,6 +61,23 @@ GitHub. Para vulnerabilidades o fugas de datos, usa [SECURITY.md](SECURITY.md).
    petición.
 3. Vuelve a desplegar (`vercel --prod`) para que las variables surtan efecto.
 
+### Federación con Respuesta VE
+
+Los `POST` públicos de reportes, personas desaparecidas, hospitales y pacientes
+también envían una copia compacta a la cola restringida de Respuesta VE para
+revisión operativa. No requiere API key de usuario.
+
+Variables opcionales:
+
+- `FEDERATION_PUBLIC_INTAKE_URL`: endpoint de intake. Por defecto usa
+  `https://respuestave.org/api/v1/public-intake`.
+- `FEDERATION_PUBLIC_INTAKE_DISABLED=1`: desactiva el espejo si necesitas operar
+  el sitio aislado.
+- `FEDERATION_PUBLIC_INTAKE_TIMEOUT_MS`: timeout del espejo, entre 500 y 10000 ms.
+
+También existe `POST /api/federation/public-intake` para reenviar cualquier JSON
+público a revisión sin acoplarlo a un formulario existente.
+
 Para desarrollo local con la misma base:
 
 ```bash

@@ -9,6 +9,7 @@ import {
 } from "@/lib/hospitals";
 import { checkRateLimit, clientIp } from "@/lib/ratelimit";
 import { readJson, bodyErrorResponse, BODY_LIMIT_TEXT } from "@/lib/body";
+import { hospitalPatientEnvelope, submitFederationIntake } from "@/lib/federation";
 
 export const dynamic = "force-dynamic";
 
@@ -72,8 +73,9 @@ export async function POST(
     );
   }
 
+  let patient: Awaited<ReturnType<typeof addPatient>>;
   try {
-    const patient = await addPatient(hospital.id, {
+    patient = await addPatient(hospital.id, {
       name,
       age: body.age,
       condition: body.condition,
@@ -81,7 +83,6 @@ export async function POST(
       notes: body.notes,
       contact: body.contact,
     });
-    return NextResponse.json({ patient }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error desconocido";
     return NextResponse.json(
@@ -89,4 +90,9 @@ export async function POST(
       { status: 503 },
     );
   }
+
+  const federation = await submitFederationIntake(
+    hospitalPatientEnvelope(hospital, patient, request),
+  );
+  return NextResponse.json({ patient, federation }, { status: 201 });
 }
