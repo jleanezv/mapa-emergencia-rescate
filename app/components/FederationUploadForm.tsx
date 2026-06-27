@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 type IntakeKind = "person" | "entity" | "need" | "status" | "media" | "url_list" | "mixed" | "unknown";
+type IntakeAudience = "in_venezuela" | "outside_venezuela" | "both";
 
 const KIND_OPTIONS: { value: IntakeKind; label: string; hint: string }[] = [
   { value: "entity", label: "Hospitales / centros", hint: "Listas, fotos o datos de hospitales, refugios, centros de acopio." },
@@ -12,6 +13,12 @@ const KIND_OPTIONS: { value: IntakeKind; label: string; hint: string }[] = [
   { value: "media", label: "Fotos / evidencia", hint: "Imágenes o material que un operador debe clasificar." },
   { value: "url_list", label: "URLs / fuentes", hint: "Links, hilos, documentos o hojas que deben revisarse." },
   { value: "mixed", label: "Mixto / no estoy seguro", hint: "Varios tipos de datos en un solo envío." },
+];
+
+const AUDIENCE_OPTIONS: { value: IntakeAudience; label: string; hint: string }[] = [
+  { value: "in_venezuela", label: "En Venezuela", hint: "Hospitales, personas, reportes, centros o necesidades dentro del país." },
+  { value: "outside_venezuela", label: "Fuera de Venezuela", hint: "Donaciones, acopios, voluntarios o difusión desde la diáspora." },
+  { value: "both", label: "Ambos", hint: "Datos que conectan ayuda internacional con necesidades dentro de Venezuela." },
 ];
 
 type FederationReceipt = {
@@ -34,6 +41,7 @@ function fileSummary(files: FileList | null): string {
 
 export default function FederationUploadForm() {
   const [kind, setKind] = useState<IntakeKind>("entity");
+  const [audience, setAudience] = useState<IntakeAudience>("in_venezuela");
   const [files, setFiles] = useState<FileList | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -47,6 +55,10 @@ export default function FederationUploadForm() {
     () => KIND_OPTIONS.find((option) => option.value === kind) ?? KIND_OPTIONS[0],
     [kind],
   );
+  const selectedAudience = useMemo(
+    () => AUDIENCE_OPTIONS.find((option) => option.value === audience) ?? AUDIENCE_OPTIONS[0],
+    [audience],
+  );
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +68,7 @@ export default function FederationUploadForm() {
 
     const form = new FormData();
     form.set("kind", kind);
+    form.set("audience", audience);
     form.set("title", title);
     form.set("description", description);
     form.set("note", note);
@@ -126,21 +139,40 @@ export default function FederationUploadForm() {
         </div>
 
         <form className="mt-6 space-y-5" onSubmit={submit}>
-          <div>
-            <label className="text-sm font-semibold text-slate-900" htmlFor="kind">
-              Tipo de datos
-            </label>
-            <select
-              id="kind"
-              value={kind}
-              onChange={(event) => setKind(event.target.value as IntakeKind)}
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
-            >
-              {KIND_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-slate-500">{selectedKind.hint}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-sm font-semibold text-slate-900" htmlFor="kind">
+                Tipo de datos
+              </label>
+              <select
+                id="kind"
+                value={kind}
+                onChange={(event) => setKind(event.target.value as IntakeKind)}
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+              >
+                {KIND_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">{selectedKind.hint}</p>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-slate-900" htmlFor="audience">
+                Alcance
+              </label>
+              <select
+                id="audience"
+                value={audience}
+                onChange={(event) => setAudience(event.target.value as IntakeAudience)}
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
+              >
+                {AUDIENCE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">{selectedAudience.hint}</p>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

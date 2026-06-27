@@ -77,12 +77,23 @@ Variables opcionales:
 
 También existe `/federacion`, una pantalla para subir CSV, JSON, texto o fotos
 pequeñas indicando si son datos de hospitales, personas, necesidades,
-actualizaciones o fuentes mixtas. Esa pantalla usa:
+actualizaciones o fuentes mixtas. El formulario marca si el dato corresponde a
+Venezuela, al exterior o a ambos para que Respuesta VE pueda procesar rutas
+locales y de diaspora sin adivinar el contexto.
+
+La vista `/coordinacion` agrupa la experiencia local como una capa normalizada:
+reportes, personas, hospitales, pacientes y canales de apoyo internacional se
+leen por audiencia (`En Venezuela` / `Fuera de Venezuela`), zona, necesidad y
+relaciones (`paciente -> hospital`, `hospital -> zona`, `reporte -> necesidad`).
+
+Endpoints:
 
 - `POST /api/federation/public-intake`: envía JSON o `multipart/form-data` a
   revisión central.
 - `GET /api/federation/public-intake?id=<receipt-id>`: consulta el estado seguro
   del recibo sin exponer el payload crudo.
+- `GET /api/federation/coordination`: devuelve la vista agrupada y normalizada
+  que alimenta `/coordinacion`.
 
 Cuando Respuesta VE promueve datos a registros normalizados, los consumidores
 deben hacer polling con cursores (`since`) en sus feeds canónicos de cambios,

@@ -17,6 +17,8 @@ export const dynamic = "force-dynamic";
 
 const KINDS = ["person", "entity", "need", "status", "media", "url_list", "mixed", "unknown"] as const;
 type IntakeKind = (typeof KINDS)[number];
+const AUDIENCES = ["in_venezuela", "outside_venezuela", "both"] as const;
+type IntakeAudience = (typeof AUDIENCES)[number];
 const MAX_FILES = 8;
 const MAX_FILE_BYTES = 1_500_000;
 
@@ -34,6 +36,12 @@ function parseKind(value: unknown): IntakeKind {
   return typeof value === "string" && (KINDS as readonly string[]).includes(value)
     ? value as IntakeKind
     : "mixed";
+}
+
+function parseAudience(value: unknown): IntakeAudience {
+  return typeof value === "string" && (AUDIENCES as readonly string[]).includes(value)
+    ? value as IntakeAudience
+    : "in_venezuela";
 }
 
 function declaredTooLarge(request: Request): boolean {
@@ -86,12 +94,14 @@ async function multipartEnvelope(request: Request): Promise<FederationEnvelope> 
   if (declaredTooLarge(request)) throw new PayloadTooLargeError(BODY_LIMIT_FEDERATION_UPLOAD);
   const form = await request.formData();
   const kind = parseKind(cleanText(form.get("kind"), 40));
+  const audience = parseAudience(cleanText(form.get("audience"), 40));
   const source = cleanText(form.get("source"), 80) ?? "mapa-emergencia-rescate-upload";
   const note = cleanText(form.get("note"), 1200) ?? undefined;
   const sourceUrl = cleanText(form.get("sourceUrl"), 500) ?? siteBaseUrl(request);
   const tags = [
     "upload",
     kind,
+    audience,
     ...(cleanText(form.get("tags"), 200)?.split(",").map((tag) => tag.trim()).filter(Boolean) ?? []),
   ].slice(0, 20);
   const files = await Promise.all(
@@ -111,6 +121,8 @@ async function multipartEnvelope(request: Request): Promise<FederationEnvelope> 
     data: {
       recordType: "typed_file_upload",
       declaredSource: source,
+      audienceScope: audience,
+      targetCountry: "VE",
       title: cleanText(form.get("title"), 160),
       description: cleanText(form.get("description"), 1200),
       files,
@@ -123,15 +135,18 @@ async function multipartEnvelope(request: Request): Promise<FederationEnvelope> 
 async function jsonEnvelope(request: Request): Promise<FederationEnvelope> {
   const body = await readJson(request, BODY_LIMIT_FEDERATION_UPLOAD);
   const kind = isRecord(body) ? parseKind(body.kind) : "unknown";
+  const audience = isRecord(body) ? parseAudience(body.audience ?? body.audienceScope) : "in_venezuela";
   return {
     source: "mapa-emergencia-rescate",
     kind,
     receivedVia: "mapa-emergencia-rescate-api",
     sourceUrl: isRecord(body) && typeof body.sourceUrl === "string" ? body.sourceUrl : siteBaseUrl(request),
-    tags: ["public_proxy", kind],
+    tags: ["public_proxy", kind, audience],
     note: "Arbitrary public JSON forwarded from mapa-emergencia-rescate for restricted Respuesta VE operator review.",
     data: {
       recordType: "public_proxy",
+      audienceScope: audience,
+      targetCountry: "VE",
       payload: body,
     },
   };
@@ -170,7 +185,7 @@ export async function POST(request: Request) {
 
   const federation = await submitFederationIntake(envelope);
   if (!federation.ok) {
-    return NextResponse.json({ federation }, { status: federation.enabled ? 502 : 503 });
+    return NextResponse.json({ federation }, { status: federation.enabled ? federation.upstreamStatus ?? 502 : 503 });
   }
   return NextResponse.json({ federation }, { status: 202 });
 }

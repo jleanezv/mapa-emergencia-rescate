@@ -15,9 +15,17 @@ una API key durante la emergencia.
   revisión manual.
 - `/federacion`: formulario para subir CSV, JSON, texto o fotos pequeñas con un
   selector de tipo (`person`, `entity`, `need`, `status`, `media`, `url_list`,
-  `mixed`).
+  `mixed`) y alcance (`in_venezuela`, `outside_venezuela`, `both`).
+- `/coordinacion`: vista derivada que normaliza y agrupa reportes, personas,
+  hospitales, pacientes y apoyo internacional por audiencia, zona, necesidad y
+  relaciones.
+- `GET /api/federation/coordination`: JSON de esa vista agrupada para agentes,
+  monitores o futuras integraciones.
 
-Las fotos en base64 no se reenvían; solo se indica `hasPhoto`.
+Las fotos pequeñas subidas desde `/federacion` se envían como `dataUrl` para
+revisión restringida. En los espejos automáticos de reportes/personas se indica
+`hasPhoto` y se añaden pistas normalizadas (`audienceScope`, `targetCountry`,
+`normalizedKind`, `area`, `relationships`) sin convertir el dato en canónico.
 
 ## Variables
 
@@ -56,3 +64,18 @@ Para datos ya normalizados, el modelo es polling por cursor en Respuesta VE:
 
 El consumidor guarda el `nextSince` que devuelve cada feed y lo usa en la próxima
 consulta. Esa es la forma de saber que hay datos nuevos ya procesados.
+
+## Agrupación local
+
+La agrupación de este sitio es una proyección, no una fuente autoritativa. Sus
+reglas actuales:
+
+- **Audiencia:** datos operativos dentro del país se muestran como `En
+  Venezuela`; donaciones, difusión y acopios exteriores se muestran como `Fuera
+  de Venezuela`; los conectores se marcan `both`.
+- **Relaciones:** pacientes apuntan a hospitales, hospitales a zonas, personas a
+  última ubicación conocida y reportes a categorías de necesidad.
+- **Seguridad:** la vista no expone contactos de pacientes/personas ni payloads
+  crudos de uploads.
+- **Promoción:** Respuesta VE sigue siendo quien procesa, deduplica y promueve
+  registros canónicos.

@@ -193,6 +193,10 @@ function iso(ms: number): string {
   return new Date(ms).toISOString();
 }
 
+function areaLabel(...parts: Array<string | null | undefined>): string {
+  return parts.map((part) => part?.trim()).filter(Boolean).join(" · ") || "Venezuela";
+}
+
 export function reportEnvelope(report: EmergencyReport, request: Request): FederationEnvelope {
   const base = siteBaseUrl(request);
   const sourceUrl = `${base}/?${new URLSearchParams({
@@ -205,11 +209,15 @@ export function reportEnvelope(report: EmergencyReport, request: Request): Feder
     kind: report.type === "missing" ? "person" : "need",
     receivedVia: "mapa-emergencia-rescate-api",
     sourceUrl,
-    tags: ["report", report.type],
+    tags: ["report", report.type, "in_venezuela"],
     localId: report.id,
     note: "Citizen map report mirrored for restricted Respuesta VE operator review.",
     data: {
       recordType: "map_report",
+      audienceScope: "in_venezuela",
+      targetCountry: "VE",
+      normalizedKind: report.type === "missing" ? "person_search" : "need",
+      area: areaLabel(report.place),
       id: report.id,
       type: report.type,
       place: report.place,
@@ -219,6 +227,10 @@ export function reportEnvelope(report: EmergencyReport, request: Request): Feder
       lng: report.lng,
       hasPhoto: Boolean(report.photoUrl),
       confirmations: report.confirmations,
+      relationships: [{
+        type: "report_needs_response",
+        target: report.type,
+      }],
       createdAt: iso(report.createdAt),
     },
   };
@@ -230,11 +242,15 @@ export function missingPersonEnvelope(person: MissingPerson, request: Request): 
     kind: "person",
     receivedVia: "mapa-emergencia-rescate-api",
     sourceUrl: `${siteBaseUrl(request)}/personas`,
-    tags: ["missing_person"],
+    tags: ["missing_person", "in_venezuela"],
     localId: person.id,
     note: "Missing-person report mirrored for restricted Respuesta VE dedupe/operator review.",
     data: {
       recordType: "missing_person",
+      audienceScope: "in_venezuela",
+      targetCountry: "VE",
+      normalizedKind: "person",
+      area: areaLabel(person.lastSeen),
       id: person.id,
       name: person.name,
       age: person.age,
@@ -243,6 +259,10 @@ export function missingPersonEnvelope(person: MissingPerson, request: Request): 
       contactPrivate: person.contact,
       status: person.status,
       hasPhoto: Boolean(person.photoUrl),
+      relationships: [{
+        type: "person_last_seen_area",
+        target: areaLabel(person.lastSeen),
+      }],
       createdAt: iso(person.createdAt),
     },
   };
@@ -255,11 +275,15 @@ export function hospitalEnvelope(hospital: Hospital, request: Request): Federati
     kind: "entity",
     receivedVia: "mapa-emergencia-rescate-api",
     sourceUrl: `${siteBaseUrl(request)}${path}`,
-    tags: ["hospital", hospital.priorityZone],
+    tags: ["hospital", hospital.priorityZone, "in_venezuela"],
     localId: hospital.id,
     note: "Hospital/entity record mirrored for restricted Respuesta VE operator review.",
     data: {
       recordType: "hospital",
+      audienceScope: "in_venezuela",
+      targetCountry: "VE",
+      normalizedKind: "health_entity",
+      area: areaLabel(hospital.state, hospital.municipality),
       id: hospital.id,
       name: hospital.name,
       facilityType: hospital.facilityType,
@@ -271,6 +295,10 @@ export function hospitalEnvelope(hospital: Hospital, request: Request): Federati
       isPriority: hospital.isPriority,
       activePatients: hospital.activePatients,
       totalPatients: hospital.totalPatients,
+      relationships: [{
+        type: "hospital_serves_area",
+        target: areaLabel(hospital.state, hospital.municipality),
+      }],
       createdAt: iso(hospital.createdAt),
     },
   };
@@ -287,11 +315,15 @@ export function hospitalPatientEnvelope(
     kind: patient.status === "deceased" ? "status" : "person",
     receivedVia: "mapa-emergencia-rescate-api",
     sourceUrl: `${siteBaseUrl(request)}${path}`,
-    tags: ["hospital_patient", patient.status, patient.condition],
+    tags: ["hospital_patient", patient.status, patient.condition, "in_venezuela"],
     localId: patient.id,
     note: "Hospital patient report mirrored for restricted Respuesta VE operator review.",
     data: {
       recordType: "hospital_patient",
+      audienceScope: "in_venezuela",
+      targetCountry: "VE",
+      normalizedKind: "patient",
+      area: areaLabel(hospital.state, hospital.municipality),
       id: patient.id,
       hospitalId: hospital.id,
       hospitalName: hospital.name,
@@ -301,6 +333,11 @@ export function hospitalPatientEnvelope(
       status: patient.status,
       notes: patient.notes,
       contactPrivate: patient.contact,
+      relationships: [{
+        type: "patient_at_hospital",
+        target: hospital.id,
+        label: hospital.name,
+      }],
       admittedAt: iso(patient.admittedAt),
       updatedAt: iso(patient.updatedAt),
     },
