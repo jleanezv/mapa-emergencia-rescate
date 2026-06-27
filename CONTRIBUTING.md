@@ -73,6 +73,15 @@ principal.
    npm run build
    ```
 
+   Si el cambio toca UI pública, navegación, formularios o mapa, corre también
+   el smoke E2E:
+
+   ```bash
+   npx playwright install chromium
+   npm run build
+   npm run test:e2e
+   ```
+
 8. Sube tu rama y abre un PR contra
    `ArturoRiosMock/mapa-emergencia-rescate:main`.
 
@@ -113,6 +122,18 @@ Cada PR debe incluir:
   endpoints públicos.
 - Notas de privacidad/seguridad si se agregan campos, logs, analítica,
   formularios, imágenes, geocodificación o integraciones externas.
+
+### Smoke E2E con Playwright
+
+El workflow **E2E Smoke** corre en pull requests sin secretos. Construye la app,
+levanta `npm start` localmente y ejecuta Playwright en Chromium con viewport
+desktop y móvil.
+
+Las pruebas cubren carga del home, mapa Leaflet, apertura/cierre de formularios,
+validación de reporte de ayuda, navegación móvil y páginas públicas críticas.
+No publican reportes, no llenan formularios con datos reales y no llaman a pagos
+reales. Si falla, revisa primero el nombre del test y el log de GitHub Actions;
+los artefactos locales de Playwright quedan ignorados por Git.
 
 Manten el PR revisable:
 
