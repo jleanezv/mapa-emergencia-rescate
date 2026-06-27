@@ -135,6 +135,35 @@ No publican reportes, no llenan formularios con datos reales y no llaman a pagos
 reales. Si falla, revisa primero el nombre del test y el log de GitHub Actions;
 los artefactos locales de Playwright quedan ignorados por Git.
 
+### Preview smoke de PRs
+
+Cada pull request ejecuta el workflow **Preview Smoke**. El job no usa secretos:
+construye la app, levanta `npm start` en GitHub Actions y hace `GET` contra
+rutas públicas críticas:
+
+- `/`
+- `/hospitales`
+- `/donaciones`
+- `/voluntario`
+- `/robots.txt`
+- `/sitemap.xml`
+
+El smoke solo lee páginas públicas; no crea reportes, no carga formularios con
+datos reales y no inicia pagos. Si falla, revisa el resumen del workflow para
+ver qué ruta no devolvió `200` y el paso "Print server logs on failure" para el
+log local del servidor, sin cuerpos de respuesta ni datos sensibles.
+
+Para reproducirlo localmente, usa dos terminales:
+
+```bash
+npm run build
+npm start -- -H 127.0.0.1 -p 3000
+```
+
+```bash
+PREVIEW_SMOKE_BASE_URL=http://127.0.0.1:3000 npm run smoke:preview
+```
+
 Manten el PR revisable:
 
 - Prefiere cambios pequeños a un PR grande con muchas responsabilidades.

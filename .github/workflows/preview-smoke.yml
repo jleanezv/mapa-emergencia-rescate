@@ -1,0 +1,60 @@
+name: Preview Smoke
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-smoke-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview-smoke:
+    name: HTTP smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      PREVIEW_SMOKE_BASE_URL: http://127.0.0.1:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Start local preview
+        run: |
+          npm start -- -H 127.0.0.1 -p 3000 > /tmp/preview-smoke-next.log 2>&1 &
+          echo "PREVIEW_SMOKE_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Check public routes
+        run: npm run smoke:preview
+
+      - name: Print server logs on failure
+        if: failure()
+        run: |
+          if [ -f /tmp/preview-smoke-next.log ]; then
+            tail -n 200 /tmp/preview-smoke-next.log
+          fi
+
+      - name: Stop local preview
+        if: always()
+        run: |
+          if [ -n "${PREVIEW_SMOKE_PID:-}" ]; then
+            kill "$PREVIEW_SMOKE_PID" 2>/dev/null || true
+          fi
