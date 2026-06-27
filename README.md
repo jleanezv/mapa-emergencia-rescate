@@ -3,7 +3,7 @@
 Plataforma de reporte ciudadano en tiempo real para coordinar rescates,
 identificar daños estructurales y organizar la entrega de ayuda humanitaria.
 
-Construida con **Next.js (App Router)**, **Leaflet + OpenStreetMap** (sin API key)
+Construida con **Next.js (App Router)**, **Leaflet + OpenStreetMap**
 y **Neon Postgres**. Pensada para alto tráfico y para funcionar bien en móvil.
 
 ## Funcionalidad
@@ -65,7 +65,7 @@ GitHub. Para vulnerabilidades o fugas de datos, usa [SECURITY.md](SECURITY.md).
 
 Los `POST` públicos de reportes, personas desaparecidas, hospitales y pacientes
 también envían una copia compacta a la cola restringida de Respuesta VE para
-revisión operativa. No requiere API key de usuario.
+revisión operativa.
 
 Variables opcionales:
 
@@ -80,6 +80,9 @@ pequeñas indicando si son datos de hospitales, personas, necesidades,
 actualizaciones o fuentes mixtas. El formulario marca si el dato corresponde a
 Venezuela, al exterior o a ambos para que Respuesta VE pueda procesar rutas
 locales y de diaspora sin adivinar el contexto.
+Los recursos de `/apoyo-global`, incluidos centros de acopio en Estados Unidos,
+enlaces de donacion y canales de difusion, se pueden enviar por esa misma ruta
+como candidatos de `entity` con alcance `outside_venezuela`.
 
 Cada espejo incluye `sourceRecordId`, `contentFingerprint`, `processingHints` y,
 cuando es posible, `canonicalCandidates` para que Respuesta VE pueda limpiar,

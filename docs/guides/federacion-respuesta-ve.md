@@ -2,8 +2,8 @@
 
 Este sitio conserva su base Neon como fuente local, pero cada alta pública
 importante se refleja en `https://respuestave.org/api/v1/public-intake` para que
-operadores de Respuesta VE puedan revisar, deduplicar y promover datos sin pedir
-una API key durante la emergencia.
+operadores de Respuesta VE puedan revisar, deduplicar y promover datos desde una
+cola central de revisión durante la emergencia.
 
 ## Qué se envía
 
@@ -22,6 +22,18 @@ una API key durante la emergencia.
 - `GET /api/federation/coordination`: JSON de esa vista agrupada para agentes,
   monitores o futuras integraciones.
 
+Los recursos de `/apoyo-global` (por ejemplo centros de acopio en Estados
+Unidos, enlaces de donacion y canales de difusion) se procesan como candidatos
+de `entity` con `audienceScope: "outside_venezuela"` cuando se suben por
+`/federacion` o `POST /api/federation/public-intake`. Los centros fisicos usan
+`kind: "donation_center"` o `kind: "supply_hub"`, los enlaces de dinero usan
+`channels.type: "donation_url"`, las instrucciones de entrega usan
+`channels.type: "supply_dropoff"` y los articulos aceptados se traducen a
+`needs` (`medical_supplies`, `food`, `water`, `shelter`, `funds` u `other`).
+Mientras Respuesta VE no tenga `countryCode` como campo canonico de
+`/api/v1/entities`, el pais queda en el payload restringido y el candidato usa
+`estado`/`municipio` para pais/ciudad o region.
+
 Las fotos pequeñas subidas desde `/federacion` se envían como `dataUrl` para
 revisión restringida. En los espejos automáticos de reportes/personas se indica
 `hasPhoto` y se añaden pistas normalizadas (`audienceScope`, `targetCountry`,
@@ -36,8 +48,8 @@ Cada envío también lleva:
 - `processingHints`: ruta sugerida de limpieza, dedupe y promoción en Respuesta
   VE.
 - `canonicalCandidates`: candidatos ya mapeados cuando el sitio conoce la forma
-  (`person` para desaparecidos, `entity` para hospitales). Son candidatos de
-  revisión, no registros canónicos.
+  (`person` para desaparecidos, `entity` para hospitales, acopios, canales y
+  organizaciones). Son candidatos de revisión, no registros canónicos.
 
 Respuesta VE sigue haciendo la limpieza final: normaliza, deduplica y decide si
 promueve por `/api/v1/persons`, `/api/v1/entities` o deja el caso en revisión

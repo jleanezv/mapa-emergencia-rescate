@@ -197,7 +197,7 @@ export default async function CoordinacionPage() {
           <h2 className="text-lg font-bold text-slate-950">Como fluye el procesamiento</h2>
           <div className="mt-4 grid gap-3 lg:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-bold text-slate-950">1. Envio sin API key</p>
+              <p className="text-sm font-bold text-slate-950">1. Envio a revision</p>
               <p className="mt-1 break-all text-xs text-slate-600">{overview.processingModel.intakeEndpoint}</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
