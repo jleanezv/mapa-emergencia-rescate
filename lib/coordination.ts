@@ -1,5 +1,5 @@
 import { listHospitals, searchPatients, type Hospital, type PatientSearchResult } from "@/lib/hospitals";
-import { listMissing, type MissingPerson } from "@/lib/missing";
+import { countMissingStats, listMissingPage, type MissingPerson } from "@/lib/missing";
 import { listReports } from "@/lib/store";
 import { REPORT_TYPES, type EmergencyReport, type ReportType } from "@/lib/types";
 
@@ -351,12 +351,15 @@ function byCategory(nodes: CoordinationNode[]): CoordinationGroup[] {
 }
 
 export async function getCoordinationOverview(): Promise<CoordinationOverview> {
-  const [reports, missingPeople, hospitals, patientResults] = await Promise.all([
+  const [reports, activeMissing, foundMissing, missingStats, hospitals, patientResults] = await Promise.all([
     listReports(),
-    listMissing({ includeFound: true }),
+    listMissingPage({ status: "active", pageSize: 100 }),
+    listMissingPage({ status: "found", pageSize: 100 }),
+    countMissingStats(),
     listHospitals({ limit: 500 }),
     searchPatients("", 200),
   ]);
+  const missingPeople = [...activeMissing.people, ...foundMissing.people];
 
   const patientNodes = patientResults.map(patientNode);
   const supportNodes = outsideSupportNodes();
@@ -372,8 +375,8 @@ export async function getCoordinationOverview(): Promise<CoordinationOverview> {
     generatedAt: new Date().toISOString(),
     stats: {
       reports: reports.length,
-      missingPeople: missingPeople.filter((person) => person.status === "active").length,
-      foundPeople: missingPeople.filter((person) => person.status === "found").length,
+      missingPeople: missingStats.active,
+      foundPeople: missingStats.found,
       hospitals: hospitals.length,
       hospitalizedPatients: patientResults.filter((item) => item.patient.status === "hospitalized").length,
       outsideSupportChannels: supportNodes.length,
