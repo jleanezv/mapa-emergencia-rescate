@@ -78,3 +78,4 @@ export const BODY_LIMIT_PHOTO = 2_000_000; // acepta foto en base64 (~1.4 MB) + 
 export const BODY_LIMIT_TEXT = 16_000; // formularios de solo texto
 export const BODY_LIMIT_SMALL = 4_000; // login, donaciones
 export const BODY_LIMIT_PROXY = 32_000; // eventos de analítica (op proxy)
+export const BODY_LIMIT_FEDERATION_UPLOAD = 4_500_000; // JSON/multipart para cola federada

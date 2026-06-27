@@ -75,8 +75,18 @@ Variables opcionales:
   el sitio aislado.
 - `FEDERATION_PUBLIC_INTAKE_TIMEOUT_MS`: timeout del espejo, entre 500 y 10000 ms.
 
-También existe `POST /api/federation/public-intake` para reenviar cualquier JSON
-público a revisión sin acoplarlo a un formulario existente.
+También existe `/federacion`, una pantalla para subir CSV, JSON, texto o fotos
+pequeñas indicando si son datos de hospitales, personas, necesidades,
+actualizaciones o fuentes mixtas. Esa pantalla usa:
+
+- `POST /api/federation/public-intake`: envía JSON o `multipart/form-data` a
+  revisión central.
+- `GET /api/federation/public-intake?id=<receipt-id>`: consulta el estado seguro
+  del recibo sin exponer el payload crudo.
+
+Cuando Respuesta VE promueve datos a registros normalizados, los consumidores
+deben hacer polling con cursores (`since`) en sus feeds canónicos de cambios,
+por ejemplo `/api/v1/persons/changes` y `/api/v1/entities/changes`.
 
 Para desarrollo local con la misma base:
 

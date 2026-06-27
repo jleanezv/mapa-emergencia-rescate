@@ -64,6 +64,13 @@ export const SECTION_LINKS: SectionLink[] = [
     tone: "sky",
   },
   {
+    href: "/federacion",
+    label: "Subir datos",
+    shortLabel: "Datos",
+    icon: "📤",
+    tone: "emerald",
+  },
+  {
     href: "/chat",
     label: "Voluntarios",
     shortLabel: "Chat",
@@ -104,7 +111,7 @@ export const DESKTOP_NAV_GROUPS: DesktopNavGroup[] = [
     label: "Recursos y ayuda",
     shortLabel: "Recursos",
     tone: "sky",
-    hrefs: ["/guia", "/acopio", "/apoyo-global", "/chat"],
+    hrefs: ["/guia", "/acopio", "/apoyo-global", "/federacion", "/chat"],
   },
 ];
 

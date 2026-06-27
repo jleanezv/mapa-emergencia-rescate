@@ -13,6 +13,9 @@ una API key durante la emergencia.
 - Hospitales y pacientes: datos operativos, estado/condición y contacto privado.
 - `POST /api/federation/public-intake`: cualquier JSON público pequeño para
   revisión manual.
+- `/federacion`: formulario para subir CSV, JSON, texto o fotos pequeñas con un
+  selector de tipo (`person`, `entity`, `need`, `status`, `media`, `url_list`,
+  `mixed`).
 
 Las fotos en base64 no se reenvían; solo se indica `hasPhoto`.
 
@@ -33,3 +36,23 @@ para que la persona no pierda su reporte.
 El endpoint proxy `POST /api/federation/public-intake` devuelve `202` cuando
 Respuesta VE recibe el payload, `502` si Respuesta VE rechaza/falla y `503` si la
 federación está desactivada localmente.
+
+## Cómo se recupera lo procesado
+
+Cada envío devuelve `federation.id` y `federation.statusUrl`. El frontend puede
+consultar el estado sin CORS usando:
+
+```bash
+curl "/api/federation/public-intake?id=<receipt-id>"
+```
+
+Ese estado solo muestra recibo, `review_status` y punteros públicos al registro
+procesado cuando exista; no devuelve payload crudo ni contactos.
+
+Para datos ya normalizados, el modelo es polling por cursor en Respuesta VE:
+
+- Personas: `GET /api/v1/persons/changes?since=<cursor>`
+- Entidades/hospitales/necesidades: `GET /api/v1/entities/changes?since=<cursor>`
+
+El consumidor guarda el `nextSince` que devuelve cada feed y lo usa en la próxima
+consulta. Esa es la forma de saber que hay datos nuevos ya procesados.
