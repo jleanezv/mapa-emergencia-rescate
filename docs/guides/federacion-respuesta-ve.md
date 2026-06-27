@@ -60,6 +60,8 @@ restringida.
 | Variable | Uso |
 | --- | --- |
 | `FEDERATION_PUBLIC_INTAKE_URL` | Override del endpoint. Default: Respuesta VE producción. |
+| `FEDERATION_API_BASE_URL` | API base para feeds canonicos. Default: `https://respuestave.org/api/v1`. |
+| `RESPUESTA_VE_API_KEY` / `FEDERATION_API_KEY` | Llave de partner solo del servidor para consultar feeds procesados. Nunca usar `NEXT_PUBLIC_`. |
 | `FEDERATION_PUBLIC_INTAKE_DISABLED=1` | Desactiva el espejo sin tocar código. |
 | `FEDERATION_PUBLIC_INTAKE_TIMEOUT_MS` | Timeout del espejo, 500-10000 ms. Default: 2500. |
 
@@ -72,6 +74,13 @@ para que la persona no pierda su reporte.
 El endpoint proxy `POST /api/federation/public-intake` devuelve `202` cuando
 Respuesta VE recibe el payload, `502` si Respuesta VE rechaza/falla y `503` si la
 federación está desactivada localmente.
+
+Para llaves de partner, el secreto se configura solo en el servidor del sitio:
+en Vercel como Environment Variable, en Cloudflare Workers con
+`wrangler secret put RESPUESTA_VE_API_KEY`, o en GitHub Actions solo si el
+workflow lo entrega al proveedor de hosting. El dominio del partner puede quedar
+registrado en Respuesta VE para badge/confianza, pero el dominio no reemplaza la
+llave server-to-server.
 
 ## Cómo se recupera lo procesado
 
@@ -92,6 +101,14 @@ Para datos ya normalizados, el modelo es polling por cursor en Respuesta VE:
 
 El consumidor guarda el `nextSince` que devuelve cada feed y lo usa en la próxima
 consulta. Esa es la forma de saber que hay datos nuevos ya procesados.
+
+Este sitio tambien expone un proxy server-side para no filtrar la llave al
+navegador:
+
+```bash
+curl "/api/federation/changes?feed=entities&since=2026-06-27T00:00:00Z"
+curl "/api/federation/changes?feed=persons&since=2026-06-27T00:00:00Z"
+```
 
 ## Agrupación local
 

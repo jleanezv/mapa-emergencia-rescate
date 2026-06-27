@@ -71,9 +71,18 @@ Variables opcionales:
 
 - `FEDERATION_PUBLIC_INTAKE_URL`: endpoint de intake. Por defecto usa
   `https://respuestave.org/api/v1/public-intake`.
+- `FEDERATION_API_BASE_URL`: API base para feeds canonicos. Por defecto usa
+  `https://respuestave.org/api/v1`.
+- `RESPUESTA_VE_API_KEY` o `FEDERATION_API_KEY`: llave de partner solo del
+  servidor para consultar feeds procesados. No uses `NEXT_PUBLIC_`.
 - `FEDERATION_PUBLIC_INTAKE_DISABLED=1`: desactiva el espejo si necesitas operar
   el sitio aislado.
 - `FEDERATION_PUBLIC_INTAKE_TIMEOUT_MS`: timeout del espejo, entre 500 y 10000 ms.
+
+En Vercel, guarda `RESPUESTA_VE_API_KEY` como Environment Variable server-side.
+En Cloudflare Workers usa `wrangler secret put RESPUESTA_VE_API_KEY`. En GitHub
+Actions solo debe vivir como secret si el workflow la inyecta al proveedor de
+hosting; no debe quedar escrita en el repo ni en el bundle del navegador.
 
 También existe `/federacion`, una pantalla para subir CSV, JSON, texto o fotos
 pequeñas indicando si son datos de hospitales, personas, necesidades,
@@ -106,6 +115,9 @@ Endpoints:
   del recibo sin exponer el payload crudo.
 - `GET /api/federation/coordination`: devuelve la vista agrupada y normalizada
   que alimenta `/coordinacion`.
+- `GET /api/federation/changes?feed=entities&since=<cursor>`: proxy server-side
+  para feeds procesados de Respuesta VE (`feed=persons` o `feed=entities`) cuando
+  `RESPUESTA_VE_API_KEY` esta configurada.
 
 Cuando Respuesta VE promueve datos a registros normalizados, los consumidores
 deben hacer polling con cursores (`since`) en sus feeds canónicos de cambios,

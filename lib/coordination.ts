@@ -79,6 +79,7 @@ export interface CoordinationOverview {
   processingModel: {
     intakeEndpoint: string;
     receiptEndpoint: string;
+    partnerFeedProxy: string;
     canonicalFeeds: string[];
     queueStatuses: string[];
   };
@@ -388,6 +389,7 @@ export async function getCoordinationOverview(): Promise<CoordinationOverview> {
     processingModel: {
       intakeEndpoint: "/api/federation/public-intake",
       receiptEndpoint: "/api/federation/public-intake?id=<receipt-id>",
+      partnerFeedProxy: "/api/federation/changes?feed=entities&since=<cursor>",
       canonicalFeeds: [
         "https://respuestave.org/api/v1/persons/changes?since=<cursor>",
         "https://respuestave.org/api/v1/entities/changes?since=<cursor>",

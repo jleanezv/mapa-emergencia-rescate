@@ -5,6 +5,7 @@ import { buildHospitalSlug } from "@/lib/hospitals-meta";
 import type { MissingPerson } from "@/lib/missing";
 
 const DEFAULT_PUBLIC_INTAKE_URL = "https://respuestave.org/api/v1/public-intake";
+const DEFAULT_API_BASE_URL = "https://respuestave.org/api/v1";
 const DEFAULT_TIMEOUT_MS = 2500;
 const MAX_FEDERATION_BYTES = 4_750_000;
 const FEDERATION_EVENT_ID = "venezuela-earthquakes-2026";
@@ -46,8 +47,39 @@ export interface FederationResult {
   error?: string;
 }
 
+export type FederationChangeFeed = "persons" | "entities";
+
+export interface FederationChangesResult {
+  ok: boolean;
+  enabled: boolean;
+  feed: FederationChangeFeed;
+  upstreamStatus?: number;
+  data?: unknown;
+  error?: string;
+}
+
 export function intakeUrl(): string {
   return process.env.FEDERATION_PUBLIC_INTAKE_URL || DEFAULT_PUBLIC_INTAKE_URL;
+}
+
+export function federationApiBaseUrl(): string {
+  const configured = process.env.FEDERATION_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL;
+  try {
+    const url = new URL(configured);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return DEFAULT_API_BASE_URL;
+    return url.toString().replace(/\/+$/, "");
+  } catch {
+    return DEFAULT_API_BASE_URL;
+  }
+}
+
+function federationPartnerApiKey(): string | null {
+  const key = process.env.RESPUESTA_VE_API_KEY?.trim() || process.env.FEDERATION_API_KEY?.trim();
+  return key || null;
+}
+
+export function federationPartnerAuthConfigured(): boolean {
+  return Boolean(federationPartnerApiKey());
 }
 
 function federationDisabled(): boolean {
@@ -252,6 +284,58 @@ export async function getFederationReceipt(id: string): Promise<FederationResult
       : "network_error";
     console.warn("Respuesta VE federation receipt lookup failed", { reason });
     return { ok: false, enabled: true, error: reason };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function getFederationChanges(
+  feed: FederationChangeFeed,
+  since: string,
+  limit: number,
+): Promise<FederationChangesResult> {
+  const key = federationPartnerApiKey();
+  if (!key) return { ok: false, enabled: false, feed, error: "missing_partner_api_key" };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), federationTimeoutMs());
+  try {
+    const url = new URL(`${federationApiBaseUrl()}/${feed}/changes`);
+    url.searchParams.set("since", since);
+    url.searchParams.set("limit", String(limit));
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        authorization: `Bearer ${key}`,
+      },
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    const receipt = await readReceipt(response);
+    if (!response.ok || receipt?.ok === false) {
+      return {
+        ok: false,
+        enabled: true,
+        feed,
+        upstreamStatus: response.status,
+        error: typeof receipt?.error === "string" ? receipt.error : "changes_unavailable",
+      };
+    }
+    return {
+      ok: true,
+      enabled: true,
+      feed,
+      upstreamStatus: response.status,
+      data: receipt,
+    };
+  } catch (error) {
+    const reason = error instanceof Error && error.name === "AbortError"
+      ? "timeout"
+      : "network_error";
+    console.warn("Respuesta VE federation changes lookup failed", { feed, reason });
+    return { ok: false, enabled: true, feed, error: reason };
   } finally {
     clearTimeout(timeout);
   }
