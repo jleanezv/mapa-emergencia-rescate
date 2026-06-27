@@ -51,6 +51,15 @@ function looksTextual(file: File): boolean {
   );
 }
 
+function imageMimeType(file: File): string | null {
+  if (file.type.startsWith("image/")) return file.type;
+  const name = file.name.toLowerCase();
+  if (/\.(jpe?g)$/i.test(name)) return "image/jpeg";
+  if (/\.png$/i.test(name)) return "image/png";
+  if (/\.webp$/i.test(name)) return "image/webp";
+  return null;
+}
+
 async function fileToPayload(file: File): Promise<Record<string, unknown>> {
   const base = {
     name: file.name,
@@ -65,9 +74,10 @@ async function fileToPayload(file: File): Promise<Record<string, unknown>> {
     const text = await file.text();
     return { ...base, text: text.slice(0, 600_000), truncated: text.length > 600_000 };
   }
-  if (file.type.startsWith("image/")) {
+  const imageType = imageMimeType(file);
+  if (imageType) {
     const bytes = Buffer.from(await file.arrayBuffer());
-    return { ...base, dataUrl: `data:${file.type};base64,${bytes.toString("base64")}` };
+    return { ...base, type: imageType, dataUrl: `data:${imageType};base64,${bytes.toString("base64")}` };
   }
   return { ...base, omittedReason: "unsupported_binary_type" };
 }
@@ -135,7 +145,7 @@ export async function GET(request: Request) {
 
   const receipt = await getFederationReceipt(id);
   if (!receipt.ok) {
-    return NextResponse.json({ federation: receipt }, { status: receipt.enabled ? 502 : 503 });
+    return NextResponse.json({ federation: receipt }, { status: receipt.enabled ? receipt.upstreamStatus ?? 502 : 503 });
   }
   return NextResponse.json({ federation: receipt }, { headers: { "Cache-Control": "no-store" } });
 }
