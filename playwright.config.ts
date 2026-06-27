@@ -22,7 +22,7 @@ export default defineConfig({
     video: "off",
   },
   webServer: {
-    command: `PORT=${PORT} npm start`,
+    command: `npm start -- -H 127.0.0.1 -p ${PORT}`,
     url: baseURL,
     reuseExistingServer: !isCI,
     timeout: 120_000,
