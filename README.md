@@ -81,6 +81,15 @@ actualizaciones o fuentes mixtas. El formulario marca si el dato corresponde a
 Venezuela, al exterior o a ambos para que Respuesta VE pueda procesar rutas
 locales y de diaspora sin adivinar el contexto.
 
+Cada espejo incluye `sourceRecordId`, `contentFingerprint`, `processingHints` y,
+cuando es posible, `canonicalCandidates` para que Respuesta VE pueda limpiar,
+deduplicar y promover sin perder procedencia. Esos campos son de revisión
+restringida: ayudan a agrupar envíos repetidos y a escoger el write path
+correcto, pero no convierten el dato en canónico ni disparan merges automáticos.
+Los operadores promueven personas por `/api/v1/persons`, hospitales/canales/
+necesidades por `/api/v1/entities`, y dejan pacientes o evidencia médica en
+revisión restringida salvo que exista una proyección pública segura.
+
 La vista `/coordinacion` agrupa la experiencia local como una capa normalizada:
 reportes, personas, hospitales, pacientes y canales de apoyo internacional se
 leen por audiencia (`En Venezuela` / `Fuera de Venezuela`), zona, necesidad y

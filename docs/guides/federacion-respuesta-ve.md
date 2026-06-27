@@ -27,6 +27,22 @@ revisión restringida. En los espejos automáticos de reportes/personas se indic
 `hasPhoto` y se añaden pistas normalizadas (`audienceScope`, `targetCountry`,
 `normalizedKind`, `area`, `relationships`) sin convertir el dato en canónico.
 
+Cada envío también lleva:
+
+- `sourceRecordId`: id estable y con namespace (`mapa-emergencia-rescate:<tipo>:<id>`)
+  para idempotencia y trazabilidad.
+- `contentFingerprint`: hash restringido para agrupar reenvíos iguales sin
+  exponer el payload en recibos públicos.
+- `processingHints`: ruta sugerida de limpieza, dedupe y promoción en Respuesta
+  VE.
+- `canonicalCandidates`: candidatos ya mapeados cuando el sitio conoce la forma
+  (`person` para desaparecidos, `entity` para hospitales). Son candidatos de
+  revisión, no registros canónicos.
+
+Respuesta VE sigue haciendo la limpieza final: normaliza, deduplica y decide si
+promueve por `/api/v1/persons`, `/api/v1/entities` o deja el caso en revisión
+restringida.
+
 ## Variables
 
 | Variable | Uso |
@@ -79,3 +95,6 @@ reglas actuales:
   crudos de uploads.
 - **Promoción:** Respuesta VE sigue siendo quien procesa, deduplica y promueve
   registros canónicos.
+- **Pacientes hospitalarios:** se envían para revisión restringida y relación
+  con hospitales; no se publican como registro médico canónico salvo que un
+  operador los convierta a una forma pública permitida.
